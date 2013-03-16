@@ -26,10 +26,75 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#if IS_ENABLED(CONFIG_MTD)
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#endif
 #include <linux/of.h>
 
 #include "rt2x00.h"
 #include "rt2x00lib.h"
+
+#if IS_ENABLED(CONFIG_MTD)
+static int rt2800lib_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
+{
+	int ret = -EINVAL;
+#ifdef CONFIG_OF
+	static struct firmware mtd_fw;
+	struct device_node *np = rt2x00dev->dev->of_node, *mtd_np = NULL;
+	size_t retlen, len = rt2x00dev->ops->eeprom_size;
+	int i, size, offset = 0;
+	struct mtd_info *mtd;
+	const char *part;
+	const __be32 *list;
+	phandle phandle;
+
+	list = of_get_property(np, "ralink,mtd-eeprom", &size);
+	if (!list)
+		return -ENOENT;
+
+	phandle = be32_to_cpup(list++);
+	if (phandle)
+		mtd_np = of_find_node_by_phandle(phandle);
+	if (!mtd_np) {
+		dev_err(rt2x00dev->dev, "failed to load mtd phandle\n");
+		return -EINVAL;
+	}
+
+	part = of_get_property(mtd_np, "label", NULL);
+	if (!part)
+		part = mtd_np->name;
+
+	mtd = get_mtd_device_nm(part);
+	if (IS_ERR(mtd)) {
+		dev_err(rt2x00dev->dev, "failed to get mtd device \"%s\"\n", part);
+		return PTR_ERR(mtd);
+	}
+
+	if (size > sizeof(*list))
+		offset = be32_to_cpup(list);
+
+	ret = mtd_read(mtd, offset, len, &retlen, (u_char *) rt2x00dev->eeprom);
+	put_mtd_device(mtd);
+
+	if ((retlen != rt2x00dev->ops->eeprom_size) || ret) {
+		dev_err(rt2x00dev->dev, "failed to load eeprom from device \"%s\"\n", part);
+		return ret;
+	}
+
+	if (of_find_property(np, "ralink,mtd-eeprom-swap", NULL))
+		for (i = 0; i < len/sizeof(u16); i++)
+			rt2x00dev->eeprom[i] = swab16(rt2x00dev->eeprom[i]);
+
+	rt2x00dev->eeprom_file = &mtd_fw;
+	mtd_fw.data = (const u8 *) rt2x00dev->eeprom;
+
+	dev_info(rt2x00dev->dev, "loaded eeprom from mtd device \"%s\"\n", part);
+#endif
+
+	return ret;
+}
+#endif
 
 static const char *
 rt2x00lib_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
@@ -57,6 +122,11 @@ static int rt2x00lib_request_eeprom_file(struct rt2x00_dev *rt2x00dev)
 	const struct firmware *ee;
 	const char *ee_name;
 	int retval;
+
+#if IS_ENABLED(CONFIG_MTD)
+	if (!rt2800lib_read_eeprom_mtd(rt2x00dev))
+		return 0;
+#endif
 
 	ee_name = rt2x00lib_get_eeprom_file_name(rt2x00dev);
 	if (!ee_name && test_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags)) {

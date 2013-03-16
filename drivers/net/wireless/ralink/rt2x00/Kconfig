@@ -220,6 +220,7 @@ config RT2800SOC
 	select RT2X00_LIB_EEPROM
 	select RT2800_LIB
 	select RT2800_LIB_MMIO
+	select MTD if SOC_RT288X || SOC_RT305X
 	help
 	  This adds support for Ralink WiSoC devices.
 	  Supported chips: RT2880, RT3050, RT3052, RT3350, RT3352.
