@@ -24,6 +24,7 @@
 #include <linux/completion.h>
 #include <linux/time.h>
 #include <linux/hw_random.h>
+#include <linux/gpio/driver.h>
 
 #include "common.h"
 #include "debug.h"
@@ -989,6 +990,14 @@ struct ath_led {
 	struct led_classdev cdev;
 };
 
+#ifdef CONFIG_GPIOLIB
+struct ath9k_gpio_chip {
+	struct ath_softc *sc;
+	char label[32];
+	struct gpio_chip gchip;
+};
+#endif
+
 struct ath_softc {
 	struct ieee80211_hw *hw;
 	struct device *dev;
@@ -1044,6 +1053,9 @@ struct ath_softc {
 #ifdef CPTCFG_MAC80211_LEDS
 	const char *led_default_trigger;
 	struct list_head leds;
+#ifdef CONFIG_GPIOLIB
+	struct ath9k_gpio_chip *gpiochip;
+#endif
 #endif
 
 #ifdef CPTCFG_ATH9K_DEBUGFS
