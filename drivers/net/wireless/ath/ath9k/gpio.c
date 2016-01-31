@@ -74,8 +74,11 @@ static int ath_add_led(struct ath_softc *sc, struct ath_led *led)
 	ath9k_hw_gpio_request_out(sc->sc_ah, gpio->gpio, gpio->name,
 				  AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
 
-	/* LED off */
-	ath9k_hw_set_gpio(sc->sc_ah, gpio->gpio, gpio->active_low);
+	/* Set default LED state */
+	if (gpio->default_state == LEDS_GPIO_DEFSTATE_ON)
+		ath9k_hw_set_gpio(sc->sc_ah, gpio->gpio, !gpio->active_low);
+	else
+		ath9k_hw_set_gpio(sc->sc_ah, gpio->gpio, gpio->active_low);
 
 	return 0;
 }
