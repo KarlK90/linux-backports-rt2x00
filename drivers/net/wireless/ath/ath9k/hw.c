@@ -2996,6 +2996,10 @@ void ath9k_hw_apply_txpower(struct ath_hw *ah, struct ath9k_channel *chan,
 	if (ant_gain > max_gain)
 		ant_reduction = ant_gain - max_gain;
 
+	/* FCC allows maximum antenna gain of 6 dBi */
+	if (reg->region == NL80211_DFS_FCC)
+		ant_reduction = max_t(int, ant_reduction - 12, 0);
+
 	ah->eep_ops->set_txpower(ah, chan, ctl,
 				 ant_reduction, new_pwr, test);
 }
