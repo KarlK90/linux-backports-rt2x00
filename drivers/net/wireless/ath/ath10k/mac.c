@@ -10284,7 +10284,7 @@ int ath10k_mac_register(struct ath10k *ar)
 	ar->hw->weight_multiplier = ATH10K_AIRTIME_WEIGHT_MULTIPLIER;
 
 #ifdef CPTCFG_MAC80211_LEDS
-	ieee80211_create_tpt_led_trigger(ar->hw,
+	ar->led_default_trigger = ieee80211_create_tpt_led_trigger(ar->hw,
 		IEEE80211_TPT_LEDTRIG_FL_RADIO, ath10k_tpt_blink,
 		ARRAY_SIZE(ath10k_tpt_blink));
 #endif

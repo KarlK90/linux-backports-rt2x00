@@ -81,9 +81,7 @@ int ath10k_leds_register(struct ath10k *ar)
 
 	ar->leds.cdev.name = ar->leds.label;
 	ar->leds.cdev.brightness_set_blocking = ath10k_leds_set_brightness_blocking;
-
-	/* FIXME: this assignment doesn't make sense as it's NULL, remove it? */
-	ar->leds.cdev.default_trigger = ar->leds.wifi_led.default_trigger;
+	ar->leds.cdev.default_trigger = ar->led_default_trigger;
 
 	ret = led_classdev_register(wiphy_dev(ar->hw->wiphy), &ar->leds.cdev);
 	if (ret)
