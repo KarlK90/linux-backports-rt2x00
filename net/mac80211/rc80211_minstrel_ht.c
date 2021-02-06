@@ -769,7 +769,8 @@ minstrel_ht_calc_rate_stats(struct minstrel_priv *mp,
 	unsigned int cur_prob;
 
 	if (unlikely(mrs->attempts > 0)) {
-		cur_prob = MINSTREL_FRAC(mrs->success, mrs->attempts);
+		cur_prob = MINSTREL_FRAC(mrs->success + mrs->last_success,
+					 mrs->attempts + mrs->last_attempts);
 		minstrel_filter_avg_add(&mrs->prob_avg,
 					&mrs->prob_avg_1, cur_prob);
 		mrs->att_hist += mrs->attempts;
