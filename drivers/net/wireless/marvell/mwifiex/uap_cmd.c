@@ -794,7 +794,8 @@ int mwifiex_uap_prepare_cmd(struct mwifiex_private *priv, u16 cmd_no,
 		break;
 	default:
 		mwifiex_dbg(priv->adapter, ERROR,
-			    "PREP_CMD: unknown cmd %#x\n", cmd_no);
+			    "PREP_CMD: unknown cmd (%s) %#x\n",
+			    mwifiex_cmd_to_str(cmd_no), cmd_no);
 		return -1;
 	}
 

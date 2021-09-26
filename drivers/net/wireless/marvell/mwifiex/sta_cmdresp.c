@@ -36,8 +36,9 @@ mwifiex_process_cmdresp_error(struct mwifiex_private *priv,
 	struct host_cmd_ds_802_11_ps_mode_enh *pm;
 
 	mwifiex_dbg(adapter, ERROR,
-		    "CMD_RESP: cmd %#x error, result=%#x\n",
-		    resp->command, resp->result);
+		    "CMD_RESP: cmd %s (%#x) error, result=%#x\n",
+		    mwifiex_cmd_to_str(le16_to_cpu(resp->command)),
+		    le16_to_cpu(resp->command), le16_to_cpu(resp->result));
 
 	if (adapter->curr_cmd->wait_q_enabled)
 		adapter->cmd_wait_q.status = -1;
