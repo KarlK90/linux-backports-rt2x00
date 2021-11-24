@@ -18,7 +18,7 @@
 #include <net/cfg80211.h>
 
 #define MWIFIEX_BSS_COEX_COUNT	     2
-#define MWIFIEX_MAX_BSS_NUM         (3)
+#define MWIFIEX_MAX_BSS_NUM         (4)
 
 #define MWIFIEX_DMA_ALIGN_SZ	    64
 #define MWIFIEX_RX_HEADROOM	    64
@@ -100,7 +100,7 @@
 #define MWIFIEX_RATE_INDEX_OFDM0   4
 
 #define MWIFIEX_MAX_STA_NUM		3
-#define MWIFIEX_MAX_UAP_NUM		3
+#define MWIFIEX_MAX_UAP_NUM		4
 #define MWIFIEX_MAX_P2P_NUM		3
 
 #define MWIFIEX_A_BAND_START_FREQ	5000
