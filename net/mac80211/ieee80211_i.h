@@ -90,6 +90,8 @@ extern const u8 ieee80211_ac_to_qos_mask[IEEE80211_NUM_ACS];
  */
 #define AIRTIME_ACTIVE_DURATION (HZ / 10)
 
+#define AIRTIME_QUANTUM_SHIFT	3
+
 struct ieee80211_bss {
 	u32 device_ts_beacon, device_ts_presp;
 

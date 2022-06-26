@@ -3984,7 +3984,7 @@ struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
 
 		if (deficit < 0)
 			sta->airtime[txqi->txq.ac].deficit +=
-				sta->airtime_weight;
+				sta->airtime_weight << AIRTIME_QUANTUM_SHIFT;
 
 		if (deficit < 0 || !aql_check) {
 			list_move_tail(&txqi->schedule_order,
@@ -4127,7 +4127,8 @@ bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 		}
 		sta = container_of(iter->txq.sta, struct sta_info, sta);
 		if (ieee80211_sta_deficit(sta, ac) < 0)
-			sta->airtime[ac].deficit += sta->airtime_weight;
+			sta->airtime[ac].deficit += sta->airtime_weight <<
+						    AIRTIME_QUANTUM_SHIFT;
 		list_move_tail(&iter->schedule_order, &local->active_txqs[ac]);
 	}
 
@@ -4135,7 +4136,7 @@ bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 	if (sta->airtime[ac].deficit >= 0)
 		goto out;
 
-	sta->airtime[ac].deficit += sta->airtime_weight;
+	sta->airtime[ac].deficit += sta->airtime_weight << AIRTIME_QUANTUM_SHIFT;
 	list_move_tail(&txqi->schedule_order, &local->active_txqs[ac]);
 	spin_unlock_bh(&local->active_txq_lock[ac]);
 
