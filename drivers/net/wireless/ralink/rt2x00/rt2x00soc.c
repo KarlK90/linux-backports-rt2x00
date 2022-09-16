@@ -97,6 +97,21 @@ int rt2x00soc_probe(struct platform_device *pdev, const struct rt2x00_ops *ops)
 	if (retval)
 		goto exit_free_reg;
 
+	rt2x00dev->pinctrl = devm_pinctrl_get(&pdev->dev);
+	if (IS_ERR(rt2x00dev->pinctrl)) {
+		rt2x00dev->pinctrl = NULL;
+		rt2x00dev->pins_default = NULL;
+		rt2x00dev->pins_pa_gpio = NULL;
+	} else {
+		rt2x00dev->pins_default = pinctrl_lookup_state(rt2x00dev->pinctrl, "default");
+		if (IS_ERR(rt2x00dev->pins_default))
+			rt2x00dev->pins_default = NULL;
+
+		rt2x00dev->pins_pa_gpio = pinctrl_lookup_state(rt2x00dev->pinctrl, "pa_gpio");
+		if (IS_ERR(rt2x00dev->pins_pa_gpio))
+			rt2x00dev->pins_pa_gpio = NULL;
+	}
+
 	return 0;
 
 exit_free_reg:
