@@ -1702,6 +1702,9 @@ static struct qmi_elem_info qmi_wlfw_fw_init_done_ind_msg_v01_ei[] = {
 		.data_type = QMI_EOTI,
 		.array_type = NO_ARRAY,
 	},
+
+	/* end of list */
+	{},
 };
 
 static int ath11k_qmi_host_cap_send(struct ath11k_base *ab)
