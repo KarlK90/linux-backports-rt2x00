@@ -998,7 +998,7 @@ static __maybe_unused int ath11k_pci_pm_resume(struct device *dev)
 	if (ret)
 		ath11k_warn(ab, "failed to resume core: %d\n", ret);
 
-	return ret;
+	return 0;
 }
 
 static SIMPLE_DEV_PM_OPS(ath11k_pci_pm_ops,
