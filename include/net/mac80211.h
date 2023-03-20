@@ -4192,6 +4192,10 @@ struct ieee80211_prep_tx_info {
  *	Note that a sta can also be inserted or removed with valid links,
  *	i.e. passed to @sta_add/@sta_state with sta->valid_links not zero.
  *	In fact, cannot change from having valid_links and not having them.
+ * @net_setup_tc: Called from .ndo_setup_tc in order to prepare hardware
+ *	flow offloading for flows originating from the vif.
+ *	Note that the driver must not assume that the vif driver_data is valid
+ *	at this point, since the callback can be called during netdev teardown.
  */
 struct ieee80211_ops {
 	void (*tx)(struct ieee80211_hw *hw,
@@ -4547,6 +4551,11 @@ struct ieee80211_ops {
 				struct ieee80211_vif *vif,
 				struct ieee80211_sta *sta,
 				u16 old_links, u16 new_links);
+	int (*net_setup_tc)(struct ieee80211_hw *hw,
+			    struct ieee80211_vif *vif,
+			    struct net_device *dev,
+			    enum tc_setup_type type,
+			    void *type_data);
 };
 
 /**
