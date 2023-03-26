@@ -173,3 +173,13 @@ sphinx_*/
 
 # Rust analyzer configuration
 /rust-project.json
+
+# OpenWRT packages
+/.pkgdir
+/ipkg-mipsel_24kc
+
+# Configuration build artifacts
+Kconfig.kernel
+Kconfig.versions
+Module.symvers.tmp
+backport-include/backport/autoconf.h
