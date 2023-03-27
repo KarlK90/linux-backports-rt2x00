@@ -1,0 +1,12 @@
+{
+    "files.exclude": {
+        "**/*.o": true,
+        "**/*.ko": true,
+        "**/*.mod": true,
+        "**/*.o.cmd": true,
+        "**/*.ko.cmd": true,
+        "**/*.order.cmd": true,
+        "**/*.mod.cmd": true,
+        "**/modules.order": true,
+    }
+}
