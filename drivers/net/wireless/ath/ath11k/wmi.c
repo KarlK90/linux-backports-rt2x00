@@ -6980,24 +6980,12 @@ static void ath11k_wmi_htc_tx_complete(struct ath11k_base *ab,
 		wake_up(&wmi->tx_ce_desc_wq);
 }
 
-static bool ath11k_reg_is_world_alpha(char *alpha)
-{
-	if (alpha[0] == '0' && alpha[1] == '0')
-		return true;
-
-	if (alpha[0] == 'n' && alpha[1] == 'a')
-		return true;
-
-	return false;
-}
-
 static int ath11k_reg_chan_list_event(struct ath11k_base *ab,
 				      struct sk_buff *skb,
 				      enum wmi_reg_chan_list_cmd_type id)
 {
 	struct cur_regulatory_info *reg_info = NULL;
 	struct ieee80211_regdomain *regd = NULL;
-	bool intersect = false;
 	int ret = 0, pdev_idx, i, j;
 	struct ath11k *ar;
 
@@ -7059,17 +7047,7 @@ static int ath11k_reg_chan_list_event(struct ath11k_base *ab,
 		    (char *)reg_info->alpha2, 2))
 		goto mem_free;
 
-	/* Intersect new rules with default regd if a new country setting was
-	 * requested, i.e a default regd was already set during initialization
-	 * and the regd coming from this event has a valid country info.
-	 */
-	if (ab->default_regd[pdev_idx] &&
-	    !ath11k_reg_is_world_alpha((char *)
-		ab->default_regd[pdev_idx]->alpha2) &&
-	    !ath11k_reg_is_world_alpha((char *)reg_info->alpha2))
-		intersect = true;
-
-	regd = ath11k_reg_build_regd(ab, reg_info, intersect);
+	regd = ath11k_reg_build_regd(ab, reg_info);
 	if (!regd) {
 		ath11k_warn(ab, "failed to build regd from reg_info\n");
 		goto fallback;
