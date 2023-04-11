@@ -290,4 +290,10 @@ config RT2X00_DEBUG
 	help
 	  Enable debugging output for all rt2x00 modules
 
+config RT2X00_THERMAL
+	bool "Ralink thermal monitoring support"
+	depends on THERMAL
+	help
+	  Select this to rt2x00 use hwmon for thermal measurement.
+
 endif

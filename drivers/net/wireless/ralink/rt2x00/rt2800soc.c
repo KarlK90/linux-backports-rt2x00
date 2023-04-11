@@ -232,6 +232,7 @@ static const struct rt2x00lib_ops rt2800soc_rt2x00_ops = {
 	.config_ant		= rt2800_config_ant,
 	.config			= rt2800_config,
 	.pre_reset_hw		= rt2800_pre_reset_hw,
+	.read_temperature = rt2800_read_temperature,
 };
 
 static const struct rt2x00_ops rt2800soc_ops = {

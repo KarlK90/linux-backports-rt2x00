@@ -8590,6 +8590,209 @@ static int rt2800_calcrcalibrationcode(struct rt2x00_dev *rt2x00dev, int d1, int
 	return calcode;
 }
 
+static void rt2800_init_temperature(struct rt2x00_dev *rt2x00dev)
+{
+	u32 MAC_RF_BYPASS0, MAC_RF_CONTROL0;
+	u8 saverfb0r35;
+	u8 saverfb5r4, saverfb5r17, saverfb5r18, saverfb5r19, saverfb5r20;
+	int wait;
+	u8 bytevalue;
+	u8 bbpr49;
+
+	MAC_RF_BYPASS0 = rt2800_register_read(rt2x00dev, RF_BYPASS0);
+	MAC_RF_CONTROL0 = rt2800_register_read(rt2x00dev, RF_CONTROL0);
+
+	rt2800_register_write(rt2x00dev, RF_BYPASS0, 0x0);
+	rt2800_register_write(rt2x00dev, RF_CONTROL0, 0x4);
+	rt2800_register_write(rt2x00dev, RF_BYPASS0, 0x3366);
+
+	if (1) // && (pAd->bRef25CVaild == FALSE)
+	{
+		saverfb0r35 = rt2800_rfcsr_read_bank(rt2x00dev, 0, 35);
+		saverfb5r4 = rt2800_rfcsr_read_bank(rt2x00dev, 5, 4);
+		saverfb5r17 = rt2800_rfcsr_read_bank(rt2x00dev, 5, 17);
+		saverfb5r18 = rt2800_rfcsr_read_bank(rt2x00dev, 5, 18);
+		saverfb5r19 = rt2800_rfcsr_read_bank(rt2x00dev, 5, 19);
+		saverfb5r20 = rt2800_rfcsr_read_bank(rt2x00dev, 5, 20);
+
+		rt2800_rfcsr_write_bank(rt2x00dev, 0, 35, 0x0);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 4, 0x27);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 17, 0x80);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 18, 0x83);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 19, 0x00);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 20, 0x20);
+
+		bytevalue = rt2800_bbp_read(rt2x00dev, 47);
+		bytevalue |= 0x50;
+		rt2800_bbp_write(rt2x00dev, 47, bytevalue);
+		rt2800_bbp_write(rt2x00dev, 22, 0x40);
+
+		for (wait = 0; wait < 200; wait++) {
+			bytevalue = rt2800_bbp_read(rt2x00dev, 47);
+			if ((bytevalue & 0x10) == 0) {
+				break;
+			}
+			usleep_range(1000, 2000);
+		}
+		// ASSERT(wait < 200);
+
+		bytevalue &= 0xf8;
+		bytevalue |= 0x04;
+		rt2800_bbp_write(rt2x00dev, 47, bytevalue);
+		bbpr49 = rt2800_bbp_read(rt2x00dev, 49);
+		rt2x00_info(rt2x00dev, "%s: BBPR49 = 0x%x\n", __FUNCTION__,
+			    bbpr49);
+		rt2x00dev->thermal.temp_25c_reference = bbpr49 - 0x0a;
+		rt2800_bbp_write(rt2x00dev, 22, 0x00);
+		rt2800_bbp_write(rt2x00dev, 21, 0x01);
+		rt2800_bbp_write(rt2x00dev, 21, 0x00);
+
+		rt2800_rfcsr_write_bank(rt2x00dev, 0, 35, saverfb0r35);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 4, saverfb5r4);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 17, saverfb5r17);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 18, saverfb5r18);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 19, saverfb5r19);
+		rt2800_rfcsr_write_bank(rt2x00dev, 5, 20, saverfb5r20);
+		// pAd->bRef25CVaild = TRUE;
+		// DBGPRINT(RT_DEBUG_ERROR, ("%s : TemperatureRef25C = 0x%x\n", __FUNCTION__, pAd->TemperatureRef25C));
+	}
+
+	bytevalue = rt2800_bbp_read(rt2x00dev, 47);
+	if ((bytevalue & 0x10) == 0) {
+		bytevalue |= 0x10;
+		rt2800_bbp_write(rt2x00dev, 47, bytevalue);
+	}
+	rt2800_bbp_write(rt2x00dev, 244, 0x31);
+
+	for (wait = 0; wait < 200; wait++) {
+		bytevalue = rt2800_bbp_read(rt2x00dev, 47);
+		if ((bytevalue & 0x10) == 0) {
+			break;
+		}
+		usleep_range(1000, 2000);
+	}
+
+	bytevalue &= 0xf8;
+	bytevalue |= 0x04;
+	rt2800_bbp_write(rt2x00dev, 47, bytevalue);
+
+	/* save temperature */
+	bbpr49 = rt2800_bbp_read(rt2x00dev, 49);
+	rt2x00dev->thermal.temp_current = (int)bbpr49;
+	rt2x00dev->thermal.temp_calibration =
+		(rt2x00dev->thermal.temp_current -
+		 rt2x00dev->thermal.temp_25c_reference) *
+		19;
+
+	rt2800_bbp_write(rt2x00dev, 244, 0x0);
+	bytevalue = rt2800_bbp_read(rt2x00dev, 21);
+	bytevalue |= 0x1;
+	rt2800_bbp_write(rt2x00dev, 21, bytevalue);
+	bytevalue &= 0xfe;
+	rt2800_bbp_write(rt2x00dev, 21, bytevalue);
+
+	// recover
+	if (wait >= 200) {
+		bytevalue = rt2800_bbp_read(rt2x00dev, 47);
+		bytevalue &= 0xef;
+		rt2800_bbp_write(rt2x00dev, 47, bytevalue);
+	}
+
+	rt2800_register_write(rt2x00dev, RF_BYPASS0, 0x0);
+	rt2800_register_write(rt2x00dev, RF_BYPASS0, MAC_RF_BYPASS0);
+	rt2800_register_write(rt2x00dev, RF_CONTROL0, MAC_RF_CONTROL0);
+
+	// pAd->bLowTemperatureTrigger = FALSE;
+	// pAd->CurrTemperatureMode = TEMPERATURE_MODE_NORMAL;
+
+	rt2x00_info(
+		rt2x00dev,
+		"current temperature %i, calibration temperature %i, 25c reference temp %i",
+		rt2x00dev->thermal.temp_current,
+		rt2x00dev->thermal.temp_calibration,
+		rt2x00dev->thermal.temp_25c_reference);
+}
+
+static void rt2800_temperature_calibration(struct rt2x00_dev *rt2x00dev)
+{
+	int temp_current = (rt2x00dev->thermal.temp_current -
+			    rt2x00dev->thermal.temp_25c_reference) *
+			   19;
+
+	//                       HT    -> LT
+	//B4/B6.R04=0x00->0x06
+	//B4/B6.R10=0x51->0x41
+	if (temp_current < -50) // (20 - 25) * 10 = -50
+	{
+		rt2800_rfcsr_write_bank(rt2x00dev, 4, 4, 0x06);
+		rt2800_rfcsr_write_bank(rt2x00dev, 6, 4, 0x06);
+		rt2800_rfcsr_write_bank(rt2x00dev, 4, 10, 0x41);
+		rt2800_rfcsr_write_bank(rt2x00dev, 6, 10, 0x41);
+		// pAd->bLowTemperatureTrigger = TRUE;
+		// DBGPRINT(RT_DEBUG_TRACE, ("%s:: CurrentTemper < 20 \n", __FUNCTION__));
+	} else {
+		// if (pAd->bLowTemperatureTrigger)
+		// {
+		// 	if ( CurrentTemper > 50)
+		// 	{
+		// rt2800_rfcsr_write_bank(rt2x00dev, 4, 4, 0x00);
+		// rt2800_rfcsr_write_bank(rt2x00dev, 6, 4, 0x00);
+		// rt2800_rfcsr_write_bank(rt2x00dev, 4, 10, 0x51);
+		// rt2800_rfcsr_write_bank(rt2x00dev, 6, 10, 0x51);
+		// 		pAd->bLowTemperatureTrigger = FALSE;
+		// 		DBGPRINT(RT_DEBUG_TRACE, ("%s::CurrentTemper > 30\n", __FUNCTION__));
+		// 	}
+		// }
+
+		// else
+		// {
+		rt2800_rfcsr_write_bank(rt2x00dev, 4, 4, 0x00);
+		rt2800_rfcsr_write_bank(rt2x00dev, 6, 4, 0x00);
+		rt2800_rfcsr_write_bank(rt2x00dev, 4, 10, 0x51);
+		rt2800_rfcsr_write_bank(rt2x00dev, 6, 10, 0x51);
+		// DBGPRINT(RT_DEBUG_INFO, ("%s::CurrentTemper > 20\n", __FUNCTION__));
+		// }
+	}
+}
+
+int rt2800_read_temperature(struct rt2x00_dev *rt2x00dev)
+{
+	u8 bbpr47, bbpr49;
+
+	bbpr47 = rt2800_bbp_read(rt2x00dev, 47);
+	bbpr47 |= 0x10;
+	rt2800_bbp_write(rt2x00dev, 47, bbpr47);
+
+	// TODO: refactor into waiting function like rt2800_wait_bbp_ready
+	for (int i = 0; i < 100; i++) {
+		bbpr47 = rt2800_bbp_read(rt2x00dev, 47);
+		if ((bbpr47 & 0x10) == 0) {
+			break;
+		}
+		usleep_range(1000, 2000);
+	}
+
+	bbpr47 = rt2800_bbp_read(rt2x00dev, 47);
+	if ((bbpr47 & 0x10) != 0) {
+		rt2x00_err(
+			rt2x00dev,
+			"failed to read current temperature, ADC didn't settle.");
+		return -EIO;
+	}
+
+	bbpr47 &= 0xf8;
+	bbpr47 |= 0x04;
+	rt2800_bbp_write(rt2x00dev, 47, bbpr47);
+
+	// read temperature
+	bbpr49 = rt2800_bbp_read(rt2x00dev, 49);
+
+	// TODO: is this right?
+	return 25 + ((int)bbpr49 - rt2x00dev->thermal.temp_25c_reference);
+}
+
+EXPORT_SYMBOL_GPL(rt2800_read_temperature);
+
 static void rt2800_r_calibration(struct rt2x00_dev *rt2x00dev)
 {
 	u32 savemacsysctrl;
@@ -10465,6 +10668,8 @@ static void rt2800_init_rfcsr_6352(struct rt2x00_dev *rt2x00dev)
 		rt2800_rfcsr_write(rt2x00dev, 28, 0x62);
 		rt2800_rfcsr_write(rt2x00dev, 29, 0xAD);
 		rt2800_rfcsr_write(rt2x00dev, 39, 0x80);
+		rt2800_rfcsr_write(rt2x00dev, 34, 0x23);
+		rt2800_rfcsr_write(rt2x00dev, 35, 0x01);
 	}
 
 	/* Initialize RF channel register to default value */
@@ -10668,10 +10873,13 @@ static void rt2800_init_rfcsr_6352(struct rt2x00_dev *rt2x00dev)
 	    rt2800_hw_get_chipeco(rt2x00dev) >= 2) {
 		rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
 		rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
+		rt2800_rfcsr_write_dccal(rt2x00dev, 4, 0x07);
 	}
 
 	rt6352_enable_pa_pin(rt2x00dev, 0);
 	rt2800_r_calibration(rt2x00dev);
+	rt2800_init_temperature(rt2x00dev);
+	rt2800_temperature_calibration(rt2x00dev);
 	rt2800_rf_self_txdc_cal(rt2x00dev);
 	rt2800_rxdcoc_calibration(rt2x00dev);
 	rt2800_bw_filter_calibration(rt2x00dev, true);

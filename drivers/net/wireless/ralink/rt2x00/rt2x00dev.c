@@ -20,6 +20,7 @@
 
 #include "rt2x00.h"
 #include "rt2x00lib.h"
+#include "rt2x00thermal.h"
 
 /*
  * Utility functions.
@@ -1515,6 +1516,10 @@ int rt2x00lib_probe_dev(struct rt2x00_dev *rt2x00dev)
 	if (!rt2x00_has_cap_flag(rt2x00dev, REQUIRE_DELAYED_RFKILL))
 		rt2x00rfkill_register(rt2x00dev);
 
+	// TODO call generalized thermal init function, that handles registration
+	if(rt2x00_thermal_register(rt2x00dev))
+		rt2x00_thermal_unregister(rt2x00dev);
+
 	return 0;
 
 exit:
@@ -1575,6 +1580,11 @@ void rt2x00lib_remove_dev(struct rt2x00_dev *rt2x00dev)
 	 */
 	rt2x00debug_deregister(rt2x00dev);
 	rt2x00leds_unregister(rt2x00dev);
+	
+	/*
+	 * Free thermal handling
+	*/
+	rt2x00_thermal_unregister(rt2x00dev);
 
 	/*
 	 * Free ieee80211_hw memory.
@@ -1608,6 +1618,8 @@ EXPORT_SYMBOL_GPL(rt2x00lib_remove_dev);
  */
 int rt2x00lib_suspend(struct rt2x00_dev *rt2x00dev)
 {
+	// TODO: suspend thermal handling?
+
 	rt2x00_dbg(rt2x00dev, "Going to sleep\n");
 
 	/*

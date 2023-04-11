@@ -215,6 +215,13 @@ struct antenna_setup {
 	u8 tx_chain_num;
 };
 
+struct thermal_state {
+	struct thermal_zone_device *tzone;
+	u8 temp_25c_reference;
+	int temp_current;
+	int temp_calibration;
+};
+
 /*
  * Quality statistics about the currently active link.
  */
@@ -634,6 +641,10 @@ struct rt2x00lib_ops {
 			struct ieee80211_sta *sta);
 	int (*sta_remove) (struct rt2x00_dev *rt2x00dev,
 			   struct ieee80211_sta *sta);
+	/*
+	 * Thermal handlers.
+	 */
+	int (*read_temperature)(struct rt2x00_dev *rt2x00dev);
 };
 
 /*
@@ -768,6 +779,11 @@ struct rt2x00_dev {
 	struct rt2x00_chan_survey *chan_survey;
 	enum nl80211_band curr_band;
 	int curr_freq;
+
+	/*
+	 * Thermal control subsystem.
+	 */
+	struct thermal_state thermal;
 
 	/*
 	 * If enabled, the debugfs interface structures
