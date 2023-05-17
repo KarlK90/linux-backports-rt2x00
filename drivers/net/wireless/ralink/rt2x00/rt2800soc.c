@@ -27,6 +27,12 @@
 #include "rt2800lib.h"
 #include "rt2800mmio.h"
 
+/* Needed to probe CHIP_VER register on MT7620 */
+#ifdef CONFIG_SOC_MT7620
+#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink/mt7620.h>
+#endif
+
 /* Allow hardware encryption to be disabled. */
 static bool modparam_nohwcrypt;
 module_param_named(nohwcrypt, modparam_nohwcrypt, bool, 0444);
@@ -118,6 +124,27 @@ static int rt2800soc_write_firmware(struct rt2x00_dev *rt2x00dev,
 	return 0;
 }
 
+#ifdef CONFIG_SOC_MT7620
+static int rt2800soc_get_chippkg(void)
+{
+	return mt7620_get_pkg();
+}
+
+static int rt2800soc_get_chipver(void)
+{
+	return mt7620_get_chipver();
+}
+
+static int rt2800soc_get_chipeco(void)
+{
+	return mt7620_get_eco();
+}
+#else
+static int rt2800soc_get_chippkg(void) { return 0; }
+static int rt2800soc_get_chipver(void) { return 0; }
+static int rt2800soc_get_chipeco(void) { return 0; }
+#endif
+
 static const struct ieee80211_ops rt2800soc_mac80211_ops = {
 	.tx			= rt2x00mac_tx,
 	.wake_tx_queue		= ieee80211_handle_wake_tx_queue,
@@ -160,6 +187,9 @@ static const struct rt2800_ops rt2800soc_rt2800_ops = {
 	.drv_init_registers	= rt2800mmio_init_registers,
 	.drv_get_txwi		= rt2800mmio_get_txwi,
 	.drv_get_dma_done	= rt2800mmio_get_dma_done,
+	.hw_get_chippkg		= rt2800soc_get_chippkg,
+	.hw_get_chipver		= rt2800soc_get_chipver,
+	.hw_get_chipeco		= rt2800soc_get_chipeco,
 };
 
 static const struct rt2x00lib_ops rt2800soc_rt2x00_ops = {
