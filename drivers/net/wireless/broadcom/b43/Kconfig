@@ -100,7 +100,7 @@ config B43_BCMA_PIO
 	default y
 
 config B43_PIO
-	bool
+	bool "Broadcom 43xx PIO support"
 	depends on B43 && B43_SSB
 	depends on SSB_BLOCKIO
 	default y
