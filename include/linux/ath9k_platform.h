@@ -46,6 +46,9 @@ struct ath9k_platform_data {
 	int (*external_reset)(void);
 
 	bool use_eeprom;
+
+	int num_leds;
+	const struct gpio_led *leds;
 };
 
 #endif /* _LINUX_ATH9K_PLATFORM_H */
