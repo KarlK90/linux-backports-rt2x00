@@ -1677,6 +1677,7 @@ enum ieee80211_smps_mode {
  *
  * @power_level: requested transmit power (in dBm), backward compatibility
  *	value only that is set to the minimum of all interfaces
+ * @max_antenna_gain: maximum antenna gain adjusted by user config (in dBi)
  *
  * @chandef: the channel definition to tune to
  * @radar_enabled: whether radar detection is enabled
@@ -1697,6 +1698,7 @@ enum ieee80211_smps_mode {
 struct ieee80211_conf {
 	u32 flags;
 	int power_level, dynamic_ps_timeout;
+	int max_antenna_gain;
 
 	u16 listen_interval;
 	u8 ps_dtim_period;

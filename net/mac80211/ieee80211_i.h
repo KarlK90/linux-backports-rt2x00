@@ -1538,6 +1538,7 @@ struct ieee80211_local {
 	int dynamic_ps_forced_timeout;
 
 	int user_power_level; /* in dBm, for all interfaces */
+	int user_antenna_gain; /* in dBi */
 
 	enum ieee80211_smps_mode smps_mode;
 
