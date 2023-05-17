@@ -1419,6 +1419,10 @@ int rt2x00lib_probe_dev(struct rt2x00_dev *rt2x00dev)
 	INIT_DELAYED_WORK(&rt2x00dev->autowakeup_work, rt2x00lib_autowakeup);
 	INIT_WORK(&rt2x00dev->sleep_work, rt2x00lib_sleep);
 
+	retval = rt2x00lib_load_eeprom_file(rt2x00dev);
+	if (retval)
+		goto exit;
+
 	/*
 	 * Let the driver probe the device to detect the capabilities.
 	 */
@@ -1559,6 +1563,11 @@ void rt2x00lib_remove_dev(struct rt2x00_dev *rt2x00dev)
 	 * Free the driver data.
 	 */
 	kfree(rt2x00dev->drv_data);
+
+	/*
+	 * Free EEPROM image.
+	 */
+	rt2x00lib_free_eeprom_file(rt2x00dev);
 }
 EXPORT_SYMBOL_GPL(rt2x00lib_remove_dev);
 

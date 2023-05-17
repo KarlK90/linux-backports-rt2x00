@@ -47,6 +47,8 @@ struct rt2800_drv_data {
 	struct ieee80211_sta *wcid_to_sta[STA_IDS_SIZE];
 };
 
+#include "rt2800.h"
+
 struct rt2800_ops {
 	u32 (*register_read)(struct rt2x00_dev *rt2x00dev,
 			      const unsigned int offset);
@@ -144,6 +146,15 @@ static inline int rt2800_regbusy_read(struct rt2x00_dev *rt2x00dev,
 static inline int rt2800_read_eeprom(struct rt2x00_dev *rt2x00dev)
 {
 	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
+
+	if (rt2x00dev->eeprom_file) {
+		memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data,
+		       EEPROM_SIZE);
+		return 0;
+	}
+
+	if (!rt2800ops->read_eeprom)
+		return -EINVAL;
 
 	return rt2800ops->read_eeprom(rt2x00dev);
 }

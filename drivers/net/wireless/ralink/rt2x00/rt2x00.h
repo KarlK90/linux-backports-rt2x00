@@ -703,6 +703,7 @@ enum rt2x00_capability_flags {
 	REQUIRE_HT_TX_DESC,
 	REQUIRE_PS_AUTOWAKE,
 	REQUIRE_DELAYED_RFKILL,
+	REQUIRE_EEPROM_FILE,
 
 	/*
 	 * Capabilities
@@ -978,6 +979,11 @@ struct rt2x00_dev {
 	 * Firmware image.
 	 */
 	const struct firmware *fw;
+
+	/*
+	 * EEPROM image.
+	 */
+	const struct firmware *eeprom_file;
 
 	/*
 	 * FIFO for storing tx status reports between isr and tasklet.

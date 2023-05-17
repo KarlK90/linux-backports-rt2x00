@@ -86,6 +86,7 @@ int rt2x00soc_probe(struct platform_device *pdev, const struct rt2x00_ops *ops)
 	if (IS_ERR(rt2x00dev->clk))
 		rt2x00dev->clk = NULL;
 
+	set_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags);
 	rt2x00_set_chip_intf(rt2x00dev, RT2X00_CHIP_INTF_SOC);
 
 	retval = rt2x00soc_alloc_reg(rt2x00dev);

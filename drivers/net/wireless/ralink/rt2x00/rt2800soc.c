@@ -90,19 +90,6 @@ static int rt2800soc_set_device_state(struct rt2x00_dev *rt2x00dev,
 	return retval;
 }
 
-static int rt2800soc_read_eeprom(struct rt2x00_dev *rt2x00dev)
-{
-	void __iomem *base_addr = ioremap(0x1F040000, EEPROM_SIZE);
-
-	if (!base_addr)
-		return -ENOMEM;
-
-	memcpy_fromio(rt2x00dev->eeprom, base_addr, EEPROM_SIZE);
-
-	iounmap(base_addr);
-	return 0;
-}
-
 /* Firmware functions */
 static char *rt2800soc_get_firmware_name(struct rt2x00_dev *rt2x00dev)
 {
@@ -168,7 +155,6 @@ static const struct rt2800_ops rt2800soc_rt2800_ops = {
 	.register_multiread	= rt2x00mmio_register_multiread,
 	.register_multiwrite	= rt2x00mmio_register_multiwrite,
 	.regbusy_read		= rt2x00mmio_regbusy_read,
-	.read_eeprom		= rt2800soc_read_eeprom,
 	.hwcrypt_disabled	= rt2800soc_hwcrypt_disabled,
 	.drv_write_firmware	= rt2800soc_write_firmware,
 	.drv_init_registers	= rt2800mmio_init_registers,
