@@ -1055,6 +1055,7 @@ struct ath_softc {
 	struct list_head leds;
 #ifdef CONFIG_GPIOLIB
 	struct ath9k_gpio_chip *gpiochip;
+	struct platform_device *btnpdev;	/* gpio-keys-polled */
 #endif
 #endif
 

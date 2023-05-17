@@ -17,6 +17,8 @@
 #include "ath9k.h"
 #include <linux/ath9k_platform.h>
 #include <linux/gpio.h>
+#include <linux/platform_device.h>
+#include <linux/gpio_keys.h>
 
 #ifdef CPTCFG_MAC80211_LEDS
 
@@ -133,6 +135,67 @@ static void ath9k_unregister_gpio_chip(struct ath_softc *sc)
 	sc->gpiochip = NULL;
 }
 
+/******************/
+/*  GPIO Buttons  */
+/******************/
+
+/* add GPIO buttons */
+static void ath9k_init_buttons(struct ath_softc *sc)
+{
+	struct ath9k_platform_data *pdata = sc->dev->platform_data;
+	struct platform_device *pdev;
+	struct gpio_keys_platform_data gkpdata;
+	struct gpio_keys_button *bt;
+	int i;
+
+	if (!sc->gpiochip)
+		return;
+
+	if (!pdata || !pdata->btns || !pdata->num_btns)
+		return;
+
+	bt = devm_kmemdup(sc->dev, pdata->btns,
+			  pdata->num_btns * sizeof(struct gpio_keys_button),
+			  GFP_KERNEL);
+	if (!bt)
+		return;
+
+	for (i = 0; i < pdata->num_btns; i++) {
+		if (pdata->btns[i].gpio == sc->sc_ah->led_pin)
+				sc->sc_ah->led_pin = -1;
+
+		ath9k_hw_gpio_request_in(sc->sc_ah, pdata->btns[i].gpio,
+					 "ath9k-gpio");
+		bt[i].gpio = sc->gpiochip->gchip.base + pdata->btns[i].gpio;
+	}
+
+	memset(&gkpdata, 0, sizeof(struct gpio_keys_platform_data));
+	gkpdata.buttons = bt;
+	gkpdata.nbuttons = pdata->num_btns;
+	gkpdata.poll_interval = pdata->btn_poll_interval;
+
+	pdev = platform_device_register_data(sc->dev, "gpio-keys-polled",
+					     PLATFORM_DEVID_AUTO, &gkpdata,
+					     sizeof(gkpdata));
+	if (!IS_ERR_OR_NULL(pdev))
+		sc->btnpdev = pdev;
+	else {
+		sc->btnpdev = NULL;
+		devm_kfree(sc->dev, bt);
+	}
+}
+
+/* remove GPIO buttons */
+static void ath9k_deinit_buttons(struct ath_softc *sc)
+{
+	if (!sc->gpiochip || !sc->btnpdev)
+		return;
+
+	platform_device_unregister(sc->btnpdev);
+
+	sc->btnpdev = NULL;
+}
+
 #else /* CONFIG_GPIOLIB */
 
 static inline void ath9k_register_gpio_chip(struct ath_softc *sc)
@@ -140,6 +203,14 @@ static inline void ath9k_register_gpio_chip(struct ath_softc *sc)
 }
 
 static inline void ath9k_unregister_gpio_chip(struct ath_softc *sc)
+{
+}
+
+static inline void ath9k_init_buttons(struct ath_softc *sc)
+{
+}
+
+static inline void ath9k_deinit_buttons(struct ath_softc *sc)
 {
 }
 
@@ -266,6 +337,7 @@ void ath_deinit_leds(struct ath_softc *sc)
 {
 	struct ath_led *led;
 
+	ath9k_deinit_buttons(sc);
 	while (!list_empty(&sc->leds)) {
 		led = list_first_entry(&sc->leds, struct ath_led, list);
 #ifdef CONFIG_GPIOLIB
@@ -305,6 +377,7 @@ void ath_init_leds(struct ath_softc *sc)
 	}
 
 	ath_fill_led_pin(sc);
+	ath9k_init_buttons(sc);
 
 	if (pdata && pdata->leds && pdata->num_leds)
 		for (i = 0; i < pdata->num_leds; i++) {
