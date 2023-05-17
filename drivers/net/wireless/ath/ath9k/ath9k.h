@@ -843,6 +843,9 @@ static inline int ath9k_dump_btcoex(struct ath_softc *sc, u8 *buf, u32 size)
 #ifdef CPTCFG_MAC80211_LEDS
 void ath_init_leds(struct ath_softc *sc);
 void ath_deinit_leds(struct ath_softc *sc);
+int ath_create_gpio_led(struct ath_softc *sc, int gpio, const char *name,
+			const char *trigger, bool active_low);
+
 #else
 static inline void ath_init_leds(struct ath_softc *sc)
 {
@@ -979,6 +982,13 @@ void ath_ant_comb_scan(struct ath_softc *sc, struct ath_rx_status *rs);
 
 #define ATH9K_NUM_CHANCTX  2 /* supports 2 operating channels */
 
+struct ath_led {
+	struct list_head list;
+	struct ath_softc *sc;
+	const struct gpio_led *gpio;
+	struct led_classdev cdev;
+};
+
 struct ath_softc {
 	struct ieee80211_hw *hw;
 	struct device *dev;
@@ -1032,9 +1042,8 @@ struct ath_softc {
 	spinlock_t chan_lock;
 
 #ifdef CPTCFG_MAC80211_LEDS
-	bool led_registered;
-	char led_name[32];
-	struct led_classdev led_cdev;
+	const char *led_default_trigger;
+	struct list_head leds;
 #endif
 
 #ifdef CPTCFG_ATH9K_DEBUGFS

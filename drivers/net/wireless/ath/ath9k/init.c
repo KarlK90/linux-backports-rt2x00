@@ -1088,7 +1088,7 @@ int ath9k_init_device(u16 devid, struct ath_softc *sc,
 
 #ifdef CPTCFG_MAC80211_LEDS
 	/* must be initialized before ieee80211_register_hw */
-	sc->led_cdev.default_trigger = ieee80211_create_tpt_led_trigger(sc->hw,
+	sc->led_default_trigger = ieee80211_create_tpt_led_trigger(sc->hw,
 		IEEE80211_TPT_LEDTRIG_FL_RADIO, ath9k_tpt_blink,
 		ARRAY_SIZE(ath9k_tpt_blink));
 #endif

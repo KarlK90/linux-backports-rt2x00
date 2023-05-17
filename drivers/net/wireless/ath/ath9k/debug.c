@@ -1506,6 +1506,61 @@ static const struct file_operations fops_chanbw = {
 	.llseek = default_llseek,
 };
 
+#ifdef CONFIG_MAC80211_LEDS
+
+static ssize_t write_file_gpio_led(struct file *file, const char __user *ubuf,
+				   size_t count, loff_t *ppos)
+{
+	struct ath_softc *sc = file->private_data;
+	char buf[32], *str, *name, *c;
+	ssize_t len;
+	unsigned int gpio;
+	bool active_low = false;
+
+	len = min(count, sizeof(buf) - 1);
+	if (copy_from_user(buf, ubuf, len))
+		return -EFAULT;
+
+	buf[len] = '\0';
+	name = strchr(buf, ',');
+	if (!name)
+		return -EINVAL;
+
+	*(name++) = 0;
+	if (!*name)
+		return -EINVAL;
+
+	c = strchr(name, '\n');
+	if (c)
+		*c = 0;
+
+	str = buf;
+	if (*str == '!') {
+		str++;
+		active_low = true;
+	}
+
+	if (kstrtouint(str, 0, &gpio) < 0)
+		return -EINVAL;
+
+	if (gpio >= sc->sc_ah->caps.num_gpio_pins)
+		return -EINVAL;
+
+	if (ath_create_gpio_led(sc, gpio, name, NULL, active_low) < 0)
+		return -EINVAL;
+
+	return count;
+}
+
+static const struct file_operations fops_gpio_led = {
+	.write = write_file_gpio_led,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
+#endif
+
 
 int ath9k_init_debug(struct ath_hw *ah)
 {
@@ -1530,6 +1585,10 @@ int ath9k_init_debug(struct ath_hw *ah)
 			    &fops_eeprom);
 	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
 			    sc, &fops_chanbw);
+#ifdef CONFIG_MAC80211_LEDS
+	debugfs_create_file("gpio_led", S_IWUSR,
+			   sc->debug.debugfs_phy, sc, &fops_gpio_led);
+#endif
 	debugfs_create_devm_seqfile(sc->dev, "dma", sc->debug.debugfs_phy,
 				    read_file_dma);
 	debugfs_create_devm_seqfile(sc->dev, "interrupt", sc->debug.debugfs_phy,
