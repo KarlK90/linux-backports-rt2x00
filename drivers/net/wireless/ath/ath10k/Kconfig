@@ -71,6 +71,16 @@ config ATH10K_DEBUGFS
 
 	  If unsure, say Y to make it easier to debug problems.
 
+config ATH10K_LEDS
+	bool "Atheros ath10k LED support"
+	depends on ATH10K
+	select MAC80211_LEDS
+	select LEDS_CLASS
+	select NEW_LEDS
+	default y
+	---help---
+	  This option is necessary, if you want LED support for chipset connected led pins. If unsure, say N.
+
 config ATH10K_SPECTRAL
 	bool "Atheros ath10k spectral scan support"
 	depends on ATH10K_DEBUGFS
