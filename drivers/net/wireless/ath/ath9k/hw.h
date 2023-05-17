@@ -723,6 +723,7 @@ struct ath_spec_scan {
  * @config_pci_powersave:
  * @calibrate: periodic calibration for NF, ANI, IQ, ADC gain, ADC-DC
  *
+ * @get_adc_entropy: get entropy from the raw ADC I/Q output
  * @spectral_scan_config: set parameters for spectral scan and enable/disable it
  * @spectral_scan_trigger: trigger a spectral scan run
  * @spectral_scan_wait: wait for a spectral scan run to finish
@@ -745,6 +746,7 @@ struct ath_hw_ops {
 			struct ath_hw_antcomb_conf *antconf);
 	void (*antdiv_comb_conf_set)(struct ath_hw *ah,
 			struct ath_hw_antcomb_conf *antconf);
+	void (*get_adc_entropy)(struct ath_hw *ah, u8 *buf, size_t len);
 	void (*spectral_scan_config)(struct ath_hw *ah,
 				     struct ath_spec_scan *param);
 	void (*spectral_scan_trigger)(struct ath_hw *ah);

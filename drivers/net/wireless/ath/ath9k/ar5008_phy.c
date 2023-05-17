@@ -1340,9 +1340,30 @@ void ar5008_hw_init_rate_txpower(struct ath_hw *ah, int16_t *rate_array,
 	}
 }
 
+static void ar5008_hw_get_adc_entropy(struct ath_hw *ah, u8 *buf, size_t len)
+{
+	int i, j;
+
+	REG_RMW_FIELD(ah, AR_PHY_TEST, AR_PHY_TEST_BBB_OBS_SEL, 1);
+	REG_CLR_BIT(ah, AR_PHY_TEST, AR_PHY_TEST_RX_OBS_SEL_BIT5);
+	REG_RMW_FIELD(ah, AR_PHY_TEST2, AR_PHY_TEST2_RX_OBS_SEL, 0);
+
+	memset(buf, 0, len);
+	for (i = 0; i < len; i++) {
+		for (j = 0; j < 4; j++) {
+			u32 regval = REG_READ(ah, AR_PHY_TST_ADC);
+
+			buf[i] <<= 2;
+			buf[i] |= (regval & 1) | ((regval & BIT(9)) >> 8);
+			udelay(1);
+		}
+	}
+}
+
 int ar5008_hw_attach_phy_ops(struct ath_hw *ah)
 {
 	struct ath_hw_private_ops *priv_ops = ath9k_hw_private_ops(ah);
+	struct ath_hw_ops *ops = ath9k_hw_ops(ah);
 	static const u32 ar5416_cca_regs[6] = {
 		AR_PHY_CCA,
 		AR_PHY_CH1_CCA,
@@ -1356,6 +1377,8 @@ int ar5008_hw_attach_phy_ops(struct ath_hw *ah)
 	ret = ar5008_hw_rf_alloc_ext_banks(ah);
 	if (ret)
 	    return ret;
+
+	ops->get_adc_entropy = ar5008_hw_get_adc_entropy;
 
 	priv_ops->rf_set_freq = ar5008_hw_set_channel;
 	priv_ops->spur_mitigate_freq = ar5008_hw_spur_mitigate;

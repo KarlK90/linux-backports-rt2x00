@@ -870,7 +870,8 @@ static void ath9k_init_txpower_limits(struct ath_softc *sc)
 	if (ah->caps.hw_caps & ATH9K_HW_CAP_5GHZ)
 		ath9k_init_band_txpower(sc, NL80211_BAND_5GHZ);
 
-	ah->curchan = curchan;
+	if (curchan)
+		ah->curchan = curchan;
 }
 
 static const struct ieee80211_iface_limit if_limits[] = {
@@ -1048,6 +1049,18 @@ static void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_CAN_REPLACE_PTK0);
 }
 
+static void ath_get_initial_entropy(struct ath_softc *sc)
+{
+	struct ath_hw *ah = sc->sc_ah;
+	char buf[256];
+
+	/* reuse last channel initialized by the tx power test */
+	ath9k_hw_reset(ah, ah->curchan, NULL, false);
+
+	ath9k_hw_get_adc_entropy(ah, buf, sizeof(buf));
+	add_device_randomness(buf, sizeof(buf));
+}
+
 int ath9k_init_device(u16 devid, struct ath_softc *sc,
 		    const struct ath_bus_ops *bus_ops)
 {
@@ -1094,6 +1107,8 @@ int ath9k_init_device(u16 devid, struct ath_softc *sc,
 #endif
 
 	wiphy_read_of_freq_limits(hw->wiphy);
+
+	ath_get_initial_entropy(sc);
 
 	/* Register with mac80211 */
 	error = ieee80211_register_hw(hw);

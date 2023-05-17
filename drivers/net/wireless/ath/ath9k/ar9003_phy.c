@@ -1918,6 +1918,26 @@ void ar9003_hw_init_rate_txpower(struct ath_hw *ah, u8 *rate_array,
 	}
 }
 
+static void ar9003_hw_get_adc_entropy(struct ath_hw *ah, u8 *buf, size_t len)
+{
+	int i, j;
+
+	REG_RMW_FIELD(ah, AR_PHY_TEST, AR_PHY_TEST_BBB_OBS_SEL, 1);
+	REG_CLR_BIT(ah, AR_PHY_TEST, AR_PHY_TEST_RX_OBS_SEL_BIT5);
+	REG_RMW_FIELD(ah, AR_PHY_TEST_CTL_STATUS, AR_PHY_TEST_CTL_RX_OBS_SEL, 0);
+
+	memset(buf, 0, len);
+	for (i = 0; i < len; i++) {
+		for (j = 0; j < 4; j++) {
+			u32 regval = REG_READ(ah, AR_PHY_TST_ADC);
+
+			buf[i] <<= 2;
+			buf[i] |= (regval & 1) | ((regval & BIT(10)) >> 9);
+			udelay(1);
+		}
+	}
+}
+
 void ar9003_hw_attach_phy_ops(struct ath_hw *ah)
 {
 	struct ath_hw_private_ops *priv_ops = ath9k_hw_private_ops(ah);
@@ -1954,6 +1974,7 @@ void ar9003_hw_attach_phy_ops(struct ath_hw *ah)
 	priv_ops->set_radar_params = ar9003_hw_set_radar_params;
 	priv_ops->fast_chan_change = ar9003_hw_fast_chan_change;
 
+	ops->get_adc_entropy = ar9003_hw_get_adc_entropy;
 	ops->antdiv_comb_conf_get = ar9003_hw_antdiv_comb_conf_get;
 	ops->antdiv_comb_conf_set = ar9003_hw_antdiv_comb_conf_set;
 	ops->spectral_scan_config = ar9003_hw_spectral_scan_config;
