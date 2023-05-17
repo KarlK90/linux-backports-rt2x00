@@ -1007,6 +1007,22 @@ static int rt2x00lib_probe_hw_modes(struct rt2x00_dev *rt2x00dev,
 	unsigned int num_rates;
 	unsigned int i;
 
+	if (rt2x00dev->dev->platform_data) {
+		struct rt2x00_platform_data *pdata;
+
+		pdata = rt2x00dev->dev->platform_data;
+		if (pdata->disable_2ghz)
+			spec->supported_bands &= ~SUPPORT_BAND_2GHZ;
+		if (pdata->disable_5ghz)
+			spec->supported_bands &= ~SUPPORT_BAND_5GHZ;
+	}
+
+	if ((spec->supported_bands & SUPPORT_BAND_BOTH) == 0) {
+		rt2x00_err(rt2x00dev, "No supported bands\n");
+		return -EINVAL;
+	}
+
+
 	num_rates = 0;
 	if (spec->supported_rates & SUPPORT_RATE_CCK)
 		num_rates += 4;

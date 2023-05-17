@@ -408,6 +408,7 @@ struct hw_mode_spec {
 	unsigned int supported_bands;
 #define SUPPORT_BAND_2GHZ	0x00000001
 #define SUPPORT_BAND_5GHZ	0x00000002
+#define SUPPORT_BAND_BOTH	(SUPPORT_BAND_2GHZ | SUPPORT_BAND_5GHZ)
 
 	unsigned int supported_rates;
 #define SUPPORT_RATE_CCK	0x00000001
