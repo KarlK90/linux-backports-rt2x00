@@ -1643,7 +1643,7 @@ static void b43_write_beacon_template(struct b43_wldev *dev,
 				  len, ram_offset, shm_size_offset, rate);
 
 	/* Write the PHY TX control parameters. */
-	antenna = B43_ANTENNA_DEFAULT;
+	antenna = dev->tx_antenna;
 	antenna = b43_antenna_to_phyctl(antenna);
 	ctl = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_BEACPHYCTL);
 	/* We can't send beacons with short preamble. Would get PHY errors. */
@@ -3284,8 +3284,8 @@ static int b43_chip_init(struct b43_wldev *dev)
 
 	/* Select the antennae */
 	if (phy->ops->set_rx_antenna)
-		phy->ops->set_rx_antenna(dev, B43_ANTENNA_DEFAULT);
-	b43_mgmtframe_txantenna(dev, B43_ANTENNA_DEFAULT);
+		phy->ops->set_rx_antenna(dev, dev->rx_antenna);
+	b43_mgmtframe_txantenna(dev, dev->tx_antenna);
 
 	if (phy->type == B43_PHYTYPE_B) {
 		value16 = b43_read16(dev, 0x005E);
@@ -3986,7 +3986,6 @@ static int b43_op_config(struct ieee80211_hw *hw, u32 changed)
 	struct b43_wldev *dev = wl->current_dev;
 	struct b43_phy *phy = &dev->phy;
 	struct ieee80211_conf *conf = &hw->conf;
-	int antenna;
 	int err = 0;
 
 	mutex_lock(&wl->mutex);
@@ -4029,11 +4028,9 @@ static int b43_op_config(struct ieee80211_hw *hw, u32 changed)
 	}
 
 	/* Antennas for RX and management frame TX. */
-	antenna = B43_ANTENNA_DEFAULT;
-	b43_mgmtframe_txantenna(dev, antenna);
-	antenna = B43_ANTENNA_DEFAULT;
+	b43_mgmtframe_txantenna(dev, dev->tx_antenna);
 	if (phy->ops->set_rx_antenna)
-		phy->ops->set_rx_antenna(dev, antenna);
+		phy->ops->set_rx_antenna(dev, dev->rx_antenna);
 
 	if (wl->radio_enabled != phy->radio_on) {
 		if (wl->radio_enabled) {
@@ -5176,6 +5173,47 @@ static int b43_op_get_survey(struct ieee80211_hw *hw, int idx,
 	return 0;
 }
 
+static int b43_op_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+{
+	struct b43_wl *wl = hw_to_b43_wl(hw);
+	struct b43_wldev *dev = wl->current_dev;
+
+	if (tx_ant == 1 && rx_ant == 1) {
+		dev->tx_antenna = B43_ANTENNA0;
+		dev->rx_antenna = B43_ANTENNA0;
+	}
+	else if (tx_ant == 2 && rx_ant == 2) {
+		dev->tx_antenna = B43_ANTENNA1;
+		dev->rx_antenna = B43_ANTENNA1;
+	}
+	else if ((tx_ant & 3) == 3 && (rx_ant & 3) == 3) {
+		dev->tx_antenna = B43_ANTENNA_DEFAULT;
+		dev->rx_antenna = B43_ANTENNA_DEFAULT;
+	}
+	else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+
+static int b43_op_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant)
+{
+	struct b43_wl *wl = hw_to_b43_wl(hw);
+	struct b43_wldev *dev = wl->current_dev;
+
+	switch (dev->tx_antenna) {
+	case B43_ANTENNA0:
+		*tx_ant = 1; *rx_ant = 1; break;
+	case B43_ANTENNA1:
+		*tx_ant = 2; *rx_ant = 2; break;
+	case B43_ANTENNA_DEFAULT:
+		*tx_ant = 3; *rx_ant = 3; break;
+	}
+	return 0;
+}
+
 static const struct ieee80211_ops b43_hw_ops = {
 	.tx			= b43_op_tx,
 	.wake_tx_queue		= ieee80211_handle_wake_tx_queue,
@@ -5198,6 +5236,8 @@ static const struct ieee80211_ops b43_hw_ops = {
 	.sw_scan_complete	= b43_op_sw_scan_complete_notifier,
 	.get_survey		= b43_op_get_survey,
 	.rfkill_poll		= b43_rfkill_poll,
+	.set_antenna		= b43_op_set_antenna,
+	.get_antenna		= b43_op_get_antenna,
 };
 
 /* Hard-reset the chip. Do not call this directly.
@@ -5499,6 +5539,8 @@ static int b43_one_core_attach(struct b43_bus_dev *dev, struct b43_wl *wl)
 	if (!wldev)
 		goto out;
 
+	wldev->rx_antenna = B43_ANTENNA_DEFAULT;
+	wldev->tx_antenna = B43_ANTENNA_DEFAULT;
 	wldev->use_pio = b43_modparam_pio;
 	wldev->dev = dev;
 	wldev->wl = wl;
@@ -5589,6 +5631,9 @@ static struct b43_wl *b43_wireless_init(struct b43_bus_dev *dev)
 	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
 
 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
+
+	hw->wiphy->available_antennas_rx = 0x3;
+	hw->wiphy->available_antennas_tx = 0x3;
 
 	wl->hw_registered = false;
 	hw->max_rates = 2;
