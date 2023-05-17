@@ -935,6 +935,7 @@ struct lbs_private *lbs_add_card(void *card, struct device *dmdev)
 		goto err_adapter;
 	}
 
+	dev_net_set(dev, wiphy_net(wdev->wiphy));
 	dev->ieee80211_ptr = wdev;
 	dev->ml_priv = priv;
 	SET_NETDEV_DEV(dev, dmdev);

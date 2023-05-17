@@ -2052,6 +2052,8 @@ struct wireless_dev *lbs_cfg_alloc(struct device *dev)
 		goto err_wiphy_new;
 	}
 
+	set_wiphy_dev(wdev->wiphy, dev);
+
 	return wdev;
 
  err_wiphy_new:
