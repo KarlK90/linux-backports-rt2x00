@@ -5363,7 +5363,9 @@ static struct genl_family hwsim_genl_family __genl_ro_after_init = {
 	.module = THIS_MODULE,
 	.small_ops = hwsim_ops,
 	.n_small_ops = ARRAY_SIZE(hwsim_ops),
+#if LINUX_VERSION_IS_GEQ(6,1,0)
 	.resv_start_op = HWSIM_CMD_DEL_MAC_ADDR + 1,
+#endif
 	.mcgrps = hwsim_mcgrps,
 	.n_mcgrps = ARRAY_SIZE(hwsim_mcgrps),
 };
