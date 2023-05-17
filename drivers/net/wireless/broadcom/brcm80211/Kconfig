@@ -8,7 +8,7 @@ config BRCMSMAC
 	depends on m
 	depends on MAC80211
 	depends on BCMA_POSSIBLE
-	select BCMA
+	depends on BCMA
 	select BRCMUTIL
 	depends on FW_LOADER
 	depends on CORDIC
