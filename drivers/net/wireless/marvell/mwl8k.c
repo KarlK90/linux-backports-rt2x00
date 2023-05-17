@@ -6289,6 +6289,8 @@ static int mwl8k_probe(struct pci_dev *pdev,
 
 	priv->running_bsses = 0;
 
+	wait_for_completion(&priv->firmware_loading_complete);
+
 	return rc;
 
 err_stop_firmware:
@@ -6321,8 +6323,6 @@ static void mwl8k_remove(struct pci_dev *pdev)
 	if (hw == NULL)
 		return;
 	priv = hw->priv;
-
-	wait_for_completion(&priv->firmware_loading_complete);
 
 	if (priv->fw_state == FW_STATE_ERROR) {
 		mwl8k_hw_reset(priv);
