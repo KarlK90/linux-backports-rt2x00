@@ -25,6 +25,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/slab.h>
+#include <linux/of.h>
 
 #include "rt2x00.h"
 #include "rt2800lib.h"
@@ -11130,6 +11131,17 @@ static int rt2800_init_eeprom(struct rt2x00_dev *rt2x00dev)
 	rt2800_init_led(rt2x00dev, &rt2x00dev->led_radio, LED_TYPE_RADIO);
 	rt2800_init_led(rt2x00dev, &rt2x00dev->led_assoc, LED_TYPE_ASSOC);
 	rt2800_init_led(rt2x00dev, &rt2x00dev->led_qual, LED_TYPE_QUALITY);
+
+	{
+		struct device_node *np = rt2x00dev->dev->of_node;
+		unsigned int led_polarity;
+
+		/* Allow overriding polarity from OF */
+		if (!of_property_read_u32(np, "ralink,led-polarity",
+					  &led_polarity))
+			rt2x00_set_field16(&eeprom, EEPROM_FREQ_LED_POLARITY,
+					   led_polarity);
+	}
 
 	rt2x00dev->led_mcu_reg = eeprom;
 #endif /* CPTCFG_RT2X00_LIB_LEDS */
