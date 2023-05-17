@@ -662,6 +662,7 @@ int ath9k_hw_init(struct ath_hw *ah)
 
 	/* These are all the AR5008/AR9001/AR9002/AR9003 hardware family of chipsets */
 	switch (ah->hw_version.devid) {
+	case AR9300_DEVID_INVALID:
 	case AR5416_DEVID_PCI:
 	case AR5416_DEVID_PCIE:
 	case AR5416_AR9100_DEVID:
