@@ -247,6 +247,19 @@ void ath9k_hw_get_channel_centers(struct ath_hw *ah,
 		centers->synth_center + (extoff * HT40_CHANNEL_CENTER_SHIFT);
 }
 
+static inline void ath9k_hw_disable_pll_lock_detect(struct ath_hw *ah)
+{
+	/* On AR9330 and AR9340 devices, some PHY registers must be
+	 * tuned to gain better stability/performance. These registers
+	 * might be changed while doing wlan reset so the registers must
+	 * be reprogrammed after each reset.
+	 */
+	REG_CLR_BIT(ah, AR_PHY_USB_CTRL1, BIT(20));
+	REG_RMW(ah, AR_PHY_USB_CTRL2,
+		(1 << 21) | (0xf << 22),
+		(1 << 21) | (0x3 << 22));
+}
+
 /******************/
 /* Chip Revisions */
 /******************/
@@ -1454,6 +1467,9 @@ static bool ath9k_hw_set_reset(struct ath_hw *ah, int type)
 		udelay(50);
 	}
 
+	if (AR_SREV_9330(ah) || AR_SREV_9340(ah))
+		ath9k_hw_disable_pll_lock_detect(ah);
+
 	return true;
 }
 
@@ -1552,6 +1568,9 @@ static bool ath9k_hw_chip_reset(struct ath_hw *ah,
 	if (AR_SREV_9330(ah))
 		ar9003_hw_internal_regulator_apply(ah);
 	ath9k_hw_init_pll(ah, chan);
+
+	if (AR_SREV_9330(ah) || AR_SREV_9340(ah))
+		ath9k_hw_disable_pll_lock_detect(ah);
 
 	return true;
 }
@@ -1859,8 +1878,14 @@ static int ath9k_hw_do_fastcc(struct ath_hw *ah, struct ath9k_channel *chan)
 	if (AR_SREV_9271(ah))
 		ar9002_hw_load_ani_reg(ah, chan);
 
+	if (AR_SREV_9330(ah) || AR_SREV_9340(ah))
+		ath9k_hw_disable_pll_lock_detect(ah);
+
 	return 0;
 fail:
+	if (AR_SREV_9330(ah) || AR_SREV_9340(ah))
+		ath9k_hw_disable_pll_lock_detect(ah);
+
 	return -EINVAL;
 }
 
@@ -2113,6 +2138,9 @@ int ath9k_hw_reset(struct ath_hw *ah, struct ath9k_channel *chan,
 		ah->radar_conf.ext_channel = IS_CHAN_HT40(chan);
 		ath9k_hw_set_radar_params(ah);
 	}
+
+	if (AR_SREV_9330(ah) || AR_SREV_9340(ah))
+		ath9k_hw_disable_pll_lock_detect(ah);
 
 	return 0;
 }
