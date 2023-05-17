@@ -465,6 +465,9 @@ ath5k_chan_set(struct ath5k_hw *ah, struct cfg80211_chan_def *chandef)
 		return -EINVAL;
 	}
 
+	if (ah->ah_bwmode_debug != AR5K_BWMODE_DEFAULT)
+		ah->ah_bwmode = ah->ah_bwmode_debug;
+
 	/*
 	 * To switch channels clear any pending DMA operations;
 	 * wait long enough for the RX fifo to drain, reset the
