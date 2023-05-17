@@ -696,6 +696,12 @@ static int ath9k_of_init(struct ath_softc *sc)
 	return 0;
 }
 
+static void ath9k_of_gpio_mask(struct ath_softc *sc)
+{
+	of_property_read_u32(sc->dev->of_node, "qca,gpio-mask",
+			     &sc->sc_ah->caps.gpio_mask);
+}
+
 static int ath9k_init_softc(u16 devid, struct ath_softc *sc,
 			    const struct ath_bus_ops *bus_ops)
 {
@@ -802,6 +808,9 @@ static int ath9k_init_softc(u16 devid, struct ath_softc *sc,
 	ret = ath9k_hw_init(ah);
 	if (ret)
 		goto err_hw;
+
+	/* GPIO mask quirk */
+	ath9k_of_gpio_mask(sc);
 
 	ret = ath9k_init_queues(sc);
 	if (ret)
