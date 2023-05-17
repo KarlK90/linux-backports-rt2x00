@@ -28,6 +28,7 @@
 #include <linux/average.h>
 #include <linux/usb.h>
 #include <linux/clk.h>
+#include <linux/rt2x00_platform.h>
 
 #include <net/mac80211.h>
 
